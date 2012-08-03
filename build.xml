@@ -772,7 +772,7 @@
         <fail message="Tests failed!">
             <condition>
                 <and>
-                    <istrue value="${test.ignore.failure}"/>
+                    <isfalse value="${test.ignore.failure}"/>
                     <isset property="tests.failed"/>
                 </and>
             </condition>
