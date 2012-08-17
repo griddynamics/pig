@@ -332,7 +332,7 @@ sub runPigCmd($$$$)
     push(@pigCmd, split(' ', $c));
 
     # set the PIG_CLASSPATH environment variable
-    $ENV{'PIG_CLASSPATH'} = "$cfg->{'hadoopconfdir'}";
+    $ENV{'PIG_CLASSPATH'} = "$cfg->{'hadoopconfdir'}:$cfg->{'classpath'}";
                           
     $self->runCmd($log, \@pigCmd);
 }
@@ -341,7 +341,7 @@ sub runCmd($$$)
 {
     my ($self, $log, $cmd) = @_;
 
-    print $log "Going to run " . join(" ", @$cmd) . "\n";
+    print $log "Going to run " . join(" ", @$cmd) . $ENV{'PIG_CLASSPATH'}  . "\n";
 
     run($cmd, \undef, $log, $log) or
         die "Failed running " . join(" ", @$cmd) . "\n";
