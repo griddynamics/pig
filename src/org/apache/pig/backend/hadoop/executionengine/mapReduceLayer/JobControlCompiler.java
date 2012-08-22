@@ -395,7 +395,7 @@ public class JobControlCompiler{
         try{
 
             //Process the POLoads
-            List<POLoad> lds = PlanHelper.getLoads(mro.mapPlan);
+            List<POLoad> lds = PlanHelper.getPhysicalOperators(mro.mapPlan, POLoad.class);
 
             if(lds!=null && lds.size()>0){
                 for (POLoad ld : lds) {
@@ -407,7 +407,7 @@ public class JobControlCompiler{
                 }
             }
 
-            adjustNumReducers(plan, mro, conf, nwJob);
+            adjustNumReducers(plan, mro, nwJob);
 
             if(lds!=null && lds.size()>0){
               for (POLoad ld : lds) {
@@ -491,8 +491,8 @@ public class JobControlCompiler{
             nwJob.setInputFormatClass(PigInputFormat.class);
 
             //Process POStore and remove it from the plan
-            LinkedList<POStore> mapStores = PlanHelper.getStores(mro.mapPlan);
-            LinkedList<POStore> reduceStores = PlanHelper.getStores(mro.reducePlan);
+            LinkedList<POStore> mapStores = PlanHelper.getPhysicalOperators(mro.mapPlan, POStore.class);
+            LinkedList<POStore> reduceStores = PlanHelper.getPhysicalOperators(mro.reducePlan, POStore.class);
 
             for (POStore st: mapStores) {
                 storeLocations.add(st);
@@ -757,55 +757,103 @@ public class JobControlCompiler{
         }
     }
 
-    public void adjustNumReducers(MROperPlan plan, MapReduceOper mro, Configuration conf,
+    /**
+     * Adjust the number of reducers based on the default_parallel, requested parallel and estimated
+     * parallel. For sampler jobs, we also adjust the next job in advance to get its runtime parallel as
+     * the number of partitions used in the sampler.
+     * @param plan the MR plan
+     * @param mro the MR operator
+     * @param nwJob the current job
+     * @throws IOException
+     */
+    public void adjustNumReducers(MROperPlan plan, MapReduceOper mro,
             org.apache.hadoop.mapreduce.Job nwJob) throws IOException {
-        List<PhysicalOperator> loads = mro.mapPlan.getRoots();
-        List<POLoad> lds = new ArrayList<POLoad>();
-        for (PhysicalOperator ld : loads) {
-            lds.add((POLoad)ld);
+        int jobParallelism = calculateRuntimeReducers(mro, nwJob);
+
+        if (mro.isSampler()) {
+            // We need to calculate the final number of reducers of the next job (order-by or skew-join)
+            // to generate the quantfile.
+            MapReduceOper nextMro = plan.getSuccessors(mro).get(0);
+
+            // Here we use the same conf and Job to calculate the runtime #reducers of the next job
+            // which is fine as the statistics comes from the nextMro's POLoads
+            int nPartitions = calculateRuntimeReducers(nextMro, nwJob);
+
+            // set the runtime #reducer of the next job as the #partition
+            ParallelConstantVisitor visitor =
+              new ParallelConstantVisitor(mro.reducePlan, nPartitions);
+            visitor.visit();
         }
+        log.info("Setting Parallelism to " + jobParallelism);
+
+        Configuration conf = nwJob.getConfiguration();
+
+        // set various parallelism into the job conf for later analysis, PIG-2779
+        conf.setInt("pig.info.reducers.default.parallel", pigContext.defaultParallel);
+        conf.setInt("pig.info.reducers.requested.parallel", mro.requestedParallelism);
+        conf.setInt("pig.info.reducers.estimated.parallel", mro.estimatedParallelism);
+
+        // this is for backward compatibility, and we encourage to use runtimeParallelism at runtime
+        mro.requestedParallelism = jobParallelism;
+
+        // finally set the number of reducers
+        conf.setInt("mapred.reduce.tasks", jobParallelism);
+    }
+
+    /**
+     * Calculate the runtime #reducers based on the default_parallel, requested parallel and estimated
+     * parallel, and save it to MapReduceOper's runtimeParallelism.
+     * @return the runtimeParallelism
+     * @throws IOException
+     */
+    private int calculateRuntimeReducers(MapReduceOper mro,
+            org.apache.hadoop.mapreduce.Job nwJob) throws IOException{
+        // we don't recalculate for the same job
+        if (mro.runtimeParallelism != -1) {
+            return mro.runtimeParallelism;
+        }
+
         int jobParallelism = -1;
-        int estimatedParallelism = estimateNumberOfReducers(conf, lds, nwJob);
+
         if (mro.requestedParallelism > 0) {
             jobParallelism = mro.requestedParallelism;
         } else if (pigContext.defaultParallel > 0) {
             jobParallelism = pigContext.defaultParallel;
         } else {
-            jobParallelism = estimatedParallelism;
+            mro.estimatedParallelism = estimateNumberOfReducers(nwJob, mro);
+            if (mro.estimatedParallelism > 0) {
+                jobParallelism = mro.estimatedParallelism;
+            } else {
+                // reducer estimation could return -1 if it couldn't estimate
+                log.info("Could not estimate number of reducers and no requested or default " +
+                         "parallelism set. Defaulting to 1 reducer.");
+                jobParallelism = 1;
+            }
         }
-        // Special case: Skewed Join and Order set parallelism to 1 even when no parallelism is specified.
-        if ((mro.isSkewedJoin() || mro.isGlobalSort()) && jobParallelism == 1) {
-            jobParallelism = estimatedParallelism;
-        }
-        if (mro.isSampler() && jobParallelism == 1) {
-            // Note: this is suboptimal, as the number of reducers communicated to the
-            // sampler is only based on the sampler inputs, meaning, the left side in the case
-            // of a skewed join. Ideally, we'd take into account the right side, as well.
-            ParallelConstantVisitor visitor =
-              new ParallelConstantVisitor(mro.reducePlan, estimatedParallelism);
-            visitor.visit();
-        }
-        log.info("Setting Parallelism to " + jobParallelism);
-        mro.requestedParallelism = jobParallelism;
-        conf.setInt("mapred.reduce.tasks", jobParallelism);
+
+        // save it
+        mro.runtimeParallelism = jobParallelism;
+        return jobParallelism;
     }
 
     /**
      * Looks up the estimator from REDUCER_ESTIMATOR_KEY and invokes it to find the number of
      * reducers to use. If REDUCER_ESTIMATOR_KEY isn't set, defaults to InputSizeReducerEstimator.
-     * @param conf
-     * @param lds
+     * @param job
+     * @param mapReducerOper
      * @throws IOException
      */
-    public static int estimateNumberOfReducers(Configuration conf, List<POLoad> lds,
-                                        org.apache.hadoop.mapreduce.Job job) throws IOException {
+    public static int estimateNumberOfReducers(org.apache.hadoop.mapreduce.Job job,
+                                               MapReduceOper mapReducerOper) throws IOException {
+        Configuration conf = job.getConfiguration();
+
         PigReducerEstimator estimator = conf.get(REDUCER_ESTIMATOR_KEY) == null ?
           new InputSizeReducerEstimator() :
           PigContext.instantiateObjectFromParams(conf,
                   REDUCER_ESTIMATOR_KEY, REDUCER_ESTIMATOR_ARG_KEY, PigReducerEstimator.class);
 
         log.info("Using reducer estimator: " + estimator.getClass().getName());
-        int numberOfReducers = estimator.estimateNumberOfReducers(conf, lds, job);
+        int numberOfReducers = estimator.estimateNumberOfReducers(job, mapReducerOper);
         return numberOfReducers;
     }
 
