@@ -177,7 +177,7 @@
     <!-- If they have not specified tests to run then null it out -->
     <property name="tests.to.run" value=""/>
 
-    <exec executable="./test_harness.pl" dir="${test.location}" failonerror="true">
+    <exec executable="./test_harness.pl" dir="${test.location}" failonerror="false">
       <env key="HARNESS_ROOT" value="."/>
       <env key="PH_LOCAL" value="${harness.PH_LOCAL}"/>
       <env key="PH_OUT" value="${harness.PH_OUT}"/>
