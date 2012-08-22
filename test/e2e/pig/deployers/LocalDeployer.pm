@@ -192,6 +192,8 @@ sub generateData
         },
     );
 
+    $ENV{'PIG_CLASSPATH'} = "$cfg->{'classpath'}";
+
 	# Create the target directories
     for my $dir ("singlefile", "dir", "glob/star/somegood",
             "glob/star/moregood", "glob/star/bad") {
