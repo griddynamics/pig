@@ -803,6 +803,10 @@
         <ant dir="${test.e2e.dir}"/>
     </target>
 
+    <target name="test-e2e-parallel" depends="jar, jar-withouthadoop" description="run end-to-end tests">
+        <ant dir="${test.e2e.dir}" target="test-parallel"/>
+    </target>
+
     <target name="test-e2e-deploy" depends="jar, jar-withouthadoop" description="deploy end-to-end tests to existing cluster">
         <ant dir="${test.e2e.dir}" target="deploy"/>
     </target>
