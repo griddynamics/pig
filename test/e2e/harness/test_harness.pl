@@ -467,7 +467,15 @@ if($dblog) {
 
 
 my %testStatuses;
+my $forkFactor = int($ENV{'FORK_FACTOR'});
+print $log "FORK FACTOR : $forkFactor\n";
+my $pm = new Parallel::ForkManager($forkFactor);
 foreach my $arg (@ARGV) {
+
+    if($forkFactor > 1) {
+         $pm->start and next;
+    }
+
     print $log "INFO: $0 at ".__LINE__." : Loading configuration file $arg\n";
 	my $cfg = readCfg($arg);
 	# Copy contents of global config file into hash.
@@ -481,7 +489,16 @@ foreach my $arg (@ARGV) {
 	my $driver = TestDriverFactory::getTestDriver($cfg);
         die "FATAL: $0: Driver does not exist\n" if ( !$driver );
 	$driver->run(\@testgroups, \@testMatches, $cfg, $log, $dbh, \%testStatuses, $arg, $startat, $logfile);
+
+	if($forkFactor > 1) {
+          $pm->finish
+    }
 }
+
+if($forkFactor > 1) {
+        $pm->wait_all_children;
+}
+
 $dbh->endTestRun($globalCfg->{'trid'}) if ($dblog);
 
 # don't remove the space after Final results, it matters.
