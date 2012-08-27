@@ -24,6 +24,7 @@ package TestDriver;
 use TestDriverFactory;
 use TestReport;
 use File::Path;
+use Parallel::ForkManager;
 
 my $passedStr = 'passed';
 my $failedStr = 'failed';
@@ -306,8 +307,17 @@ sub run
         my $properties= new Properties(0, $globalHash{'propertiesFile'});
 
         my %groupExecuted;
+
+    my $forkFactor = int($ENV{'FORK_FACTOR'});
+    print $log "FORK FACTOR : $forkFactor\n";
+    my $pm = new Parallel::ForkManager($forkFactor);
+
 	foreach my $group (@{$cfg->{'groups'}}) {
- 
+
+        if($forkFactor > 1) {
+        $pm->start and next;
+        }
+
                 print $log "INFO $subName at ".__LINE__.": Running TEST GROUP(".$group->{'name'}.")\n";
                 
 		my %groupHash = %globalHash;
@@ -502,8 +512,14 @@ sub run
                 $report = 0;
                 $groupDuration=0;
 
-
+        if($forkFactor > 1) {
+            $pm->finish
+        }
 	}
+
+    if($forkFactor > 1) {
+        $pm->wait_all_children;
+    }
 
 	# Do the global cleanup
 	$self->globalCleanup(\%globalHash, $log);
