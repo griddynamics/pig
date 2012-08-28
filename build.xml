@@ -1365,7 +1365,7 @@
      	<taskdef resource="cloverlib.xml" classpath="${clover.jar}"/>
         <mkdir dir="${clover.db.dir}"/>
         <clover-setup initString="${clover.db.dir}/pig_coverage.db">
-        	<fileset dir="src" includes="**/*.java"/>
+        	<fileset dir="src" includes="**/*.java" excludes="**/pig/test/**/.java"/>
         </clover-setup>
      </target>
 
