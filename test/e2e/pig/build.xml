@@ -177,6 +177,7 @@
     <!-- If they have not specified tests to run then null it out -->
     <property name="tests.to.run" value=""/>
     <property name="fork.factor" value=""/>
+    <property name="file.fork.factor" value=""/>
 
     <exec executable="./test_harness.pl" dir="${test.location}" failonerror="false">
       <env key="HARNESS_ROOT" value="."/>
@@ -191,6 +192,7 @@
       <env key="HARNESS_CONF" value="${harness.conf.file}"/>
       <env key="HADOOP_HOME" value="${harness.hadoop.home}"/>
       <env key="FORK_FACTOR" value="${fork.factor}"/>
+      <env key="FILE_FORK_FACTOR" value="${file.fork.factor}"/>
       <arg line="${tests.to.run}"/>
       <arg value="${test.location}/tests/cmdline.conf"/>
       <arg value="${test.location}/tests/multiquery.conf"/>

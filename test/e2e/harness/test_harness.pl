@@ -467,8 +467,8 @@ if($dblog) {
 
 
 my %testStatuses;
-my $forkFactor = int($ENV{'FORK_FACTOR'});
-print $log "FORK FACTOR : $forkFactor\n";
+my $forkFactor = int($ENV{'FILE_FORK_FACTOR'});
+print $log "FILE FORK FACTOR : $forkFactor\n";
 my $pm = new Parallel::ForkManager($forkFactor);
 foreach my $arg (@ARGV) {
 
