@@ -102,7 +102,9 @@ sub globalSetup
     # Setup the output path
     my $me = `whoami`;
     chomp $me;
-    $globalHash->{'runid'} = $me . "." . time;
+    my $jobId = $globalHash->{'job-id'};
+    my $timeId = time;
+    $globalHash->{'runid'} = $me . "-" . $timeId . "-" . $jobId;
 
     # if "-ignore false" was provided on the command line,
     # it means do run tests even when marked as 'ignore'
@@ -113,6 +115,7 @@ sub globalSetup
 
     $globalHash->{'outpath'} = $globalHash->{'outpathbase'} . "/" . $globalHash->{'runid'} . "/";
     $globalHash->{'localpath'} = $globalHash->{'localpathbase'} . "/" . $globalHash->{'runid'} . "/";
+    $globalHash->{'tmpPath'} = $globalHash->{'tmpPath'} . "/" . $globalHash->{'runid'} . "/";
 
     # add libexec location to the path
     if (defined($ENV{'PATH'})) {
@@ -123,8 +126,6 @@ sub globalSetup
     }
 
     my @cmd = ($self->getPigCmd($globalHash, $log), '-e', 'mkdir', $globalHash->{'outpath'});
-
-
 	print $log "Going to run " . join(" ", @cmd) . "\n";
     IPC::Run::run(\@cmd, \undef, $log, $log) or die "Cannot create HDFS directory " . $globalHash->{'outpath'} . ": $? - $!\n";
 
@@ -136,6 +137,11 @@ sub globalSetup
     IPC::Run::run(['mkdir', '-p', $globalHash->{'tmpPath'}], \undef, $log, $log) or 
         die "Cannot create temporary directory " . $globalHash->{'tmpPath'} .
         " " . "$ERRNO\n";
+
+    # Create the HDFS temporary directory
+    @cmd = ($self->getPigCmd($globalHash, $log), '-e', 'mkdir', "tmp/$globalHash->{'runid'}");
+	print $log "Going to run " . join(" ", @cmd) . "\n";
+    IPC::Run::run(\@cmd, \undef, $log, $log) or die "Cannot create HDFS directory " . "tmp/$globalHash->{'runid'}" . ": $? - $!\n";
 }
 
 sub globalCleanup
@@ -145,6 +151,11 @@ sub globalCleanup
     IPC::Run::run(['rm', '-rf', $globalHash->{'tmpPath'}], \undef, $log, $log) or 
         warn "Cannot remove temporary directory " . $globalHash->{'tmpPath'} .
         " " . "$ERRNO\n";
+
+    # Cleanup the HDFS temporary directory
+    my @cmd = ($self->getPigCmd($globalHash, $log), '-e', 'fs', '-rmr', "tmp/$globalHash->{'runid'}");
+	print $log "Going to run: [" . join(" ", @cmd) . "]\n";
+    IPC::Run::run(\@cmd, \undef, $log, $log) or die "Cannot remove HDFS directory " . "tmp/$globalHash->{'runid'}" . ": $? - $!\n";
 }
 
 
