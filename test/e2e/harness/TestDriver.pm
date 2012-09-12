@@ -111,11 +111,11 @@ sub appendFile($$) {
 # Paramaters: 
 #   1: the hash reference;
 # Returns: void
-sub dumpHash($_)
+sub dumpHash($;$)
 {
     my ($myhash, $msg) = @_; 
     print "Dump of hash $msg:\n";
-    while (my ($key, $value) = each($myhash)) {
+    while (my ($key, $value) = each(%$myhash)) {
         print "  [$key] = [$value]\n";
     }   
 }
@@ -127,7 +127,7 @@ sub dumpHash($_)
 # Paramaters: 
 #   1*: object(s) to be printed, typically one string;
 # Returns: void
-sub dbg($_) 
+sub dbg(@) 
 {
     #print @_;
 }
