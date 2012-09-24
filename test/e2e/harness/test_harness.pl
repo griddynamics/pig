@@ -561,6 +561,11 @@ if ($forkFactor > 1) {
 
 $dbh->endTestRun($globalCfg->{'trid'}) if ($dblog);
 
+# cleanup temporary Hadoop directories
+if($groupForkFactor>1 && $forkFactor>1 && defined($globalCfg->{'hadoop.mapred.dir'}) && $globalCfg->{'exectype'} eq "local") {
+    rmtree( $globalCfg->{'hadoop.mapred.dir'} );
+}
+
 # don't remove the space after Final results, it matters.
 TestDriver::printResults(\%testStatuses, $log, "Final results ");
 my $finishStr = "Finished test run at " . time . "\n";

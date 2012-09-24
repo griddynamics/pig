@@ -309,6 +309,16 @@ sub runScript
     return \%result;
 }
 
+sub hadoopLocalTmpDir($$)
+{
+    my ($self, $testCmd) = @_;
+
+    if (defined($testCmd->{'hadoop.mapred.dir'}) && int($ENV{'FORK_FACTOR'})>1 && int($ENV{'FILE_FORK_FACTOR'})>1) {
+        return $testCmd->{'hadoop.mapred.dir'} . $PID;
+    } else {
+        return undef;
+    }
+}
 
 sub getPigCmd($$$)
 {
@@ -331,7 +341,12 @@ sub getPigCmd($$$)
     }
 
     if ($testCmd->{'exectype'} eq "local") {
-		push(@{$testCmd->{'java_params'}}, "-Xmx1024m");
+        my $javaParams = "-Xmx1024m";
+        my $hadoopTmpDir = $self->hadoopLocalTmpDir($testCmd);
+        if (defined($hadoopTmpDir)) {
+           $javaParams .= " -Dmapred.local.dir=$hadoopTmpDir -Dyarn.nodemanager.local-dirs=$hadoopTmpDir";
+        }
+		push(@{$testCmd->{'java_params'}}, $javaParams);
         push(@pigCmd, ("-x", "local"));
     }
 
