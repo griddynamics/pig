@@ -1363,6 +1363,7 @@
         <mkdir dir="${clover.db.dir}"/>
         <clover-setup initString="${clover.db.dir}/pig_coverage.db">
         	<fileset dir="src" includes="**/*.java"/>
+                <methodContext name="simple_method" regexp="(.* )?public .*(get|set|is)[A-Z0-9].*" maxComplexity="1"/>
         </clover-setup>
      </target>
 
@@ -1386,12 +1387,12 @@
      	<mkdir dir="${clover.report.dir}"/>
   	<clover-report>
      		<current outfile="${clover.report.dir}" title="${final.name}">
-     	    		<format type="html"/>
+     	    		<format type="html" filter="simple_method"/>
      	  	</current>
   	</clover-report>
         <clover-report>
           	<current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
-            		<format type="xml"/>
+            		<format type="xml" filter="simple_method"/>
           	</current>
         </clover-report>
      </target>
