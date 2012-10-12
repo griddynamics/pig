@@ -47,6 +47,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.pig.ExecType;
+import org.apache.pig.PigConfiguration;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.backend.hadoop.datastorage.ConfigurationUtil;
@@ -60,6 +61,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
 import org.apache.pig.impl.util.PropertiesUtil;
 import org.apache.pig.impl.util.Utils;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -73,13 +75,11 @@ public class TestSchemaTuple {
 
     @Before
     public void perTestInitialize() {
-        SchemaTupleFrontend.reset();
-        SchemaTupleBackend.reset();
-
         props = new Properties();
-        props.setProperty(SchemaTupleBackend.SHOULD_GENERATE_KEY, "true");
+        props.setProperty(PigConfiguration.SHOULD_USE_SCHEMA_TUPLE, "true");
 
         conf = ConfigurationUtil.toConfiguration(props);
+
         pigContext = new PigContext(ExecType.LOCAL, props);
     }
 
@@ -97,7 +97,7 @@ public class TestSchemaTuple {
 
         udfSchema = Utils.getSchemaFromString("a:chararray,(a:chararray)");
         isAppendable = false;
-        context = GenContext.LOAD;
+        context = GenContext.FOREACH;
         SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, isAppendable, context);
 
         udfSchema = Utils.getSchemaFromString("a:int,(a:int,(a:int,(a:int,(a:int,(a:int,(a:int))))))");
@@ -106,9 +106,9 @@ public class TestSchemaTuple {
         udfSchema = Utils.getSchemaFromString("((a:int,b:int),(a:int,b:int),(a:int,b:int)),((a:int,b:int),(a:int,b:int),(a:int,b:int))");
         SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, isAppendable, context);
 
-        udfSchema = Utils.getSchemaFromString("a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double,"
-                +"(a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double,"
-                +"(a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double))");
+        udfSchema = Utils.getSchemaFromString("a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double, dt:datetime"
+                +"(a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double, dt:datetime"
+                +"(a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double, dt:datetime))");
         SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, isAppendable, context);
 
         udfSchema = Utils.getSchemaFromString("boolean, boolean, boolean, boolean, boolean, boolean"
@@ -126,45 +126,45 @@ public class TestSchemaTuple {
                 + "boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean");
         SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, isAppendable, context);
 
-        udfSchema = Utils.getSchemaFromString("int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))");
+        udfSchema = Utils.getSchemaFromString("int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))");
         SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, isAppendable, context);
 
         isAppendable = true;
@@ -178,11 +178,19 @@ public class TestSchemaTuple {
         udfSchema = Utils.getSchemaFromString("int, m:map[(int,int,int)]");
         SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, isAppendable, context);
 
+        isAppendable = false;
+        udfSchema = new Schema();
+        SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, isAppendable, context);
+
+        isAppendable = false;
+        udfSchema = new Schema(new FieldSchema(null, DataType.BAG));
+        SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, isAppendable, context);
+
         // this compiles and "ships"
         SchemaTupleFrontend.copyAllGeneratedToDistributedCache(pigContext, conf);
 
         //backend
-        SchemaTupleBackend.initialize(conf, ExecType.LOCAL);
+        SchemaTupleBackend.initialize(conf, pigContext);
 
         udfSchema = Utils.getSchemaFromString("a:int");
         isAppendable = false;
@@ -207,7 +215,7 @@ public class TestSchemaTuple {
 
         udfSchema = Utils.getSchemaFromString("a:chararray,(a:chararray)");
         isAppendable = false;
-        context = GenContext.LOAD;
+        context = GenContext.FOREACH;
         tf = SchemaTupleFactory.getInstance(udfSchema, isAppendable, context);
         putThroughPaces(tf, udfSchema, isAppendable);
 
@@ -223,9 +231,9 @@ public class TestSchemaTuple {
         tf = SchemaTupleFactory.getInstance(udfSchema, isAppendable, context);
         putThroughPaces(tf, udfSchema, isAppendable);
 
-        udfSchema = Utils.getSchemaFromString("a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double,"
-                +"(a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double,"
-                +"(a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double))");
+        udfSchema = Utils.getSchemaFromString("a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double, dt: datetime"
+                +"(a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double, dt: datetime,"
+                +"(a:int, b:long, c:chararray, d:boolean, e:bytearray, f:float, g:double, dt: datetime))");
         tf = SchemaTupleFactory.getInstance(udfSchema, isAppendable, context);
         putThroughPaces(tf, udfSchema, isAppendable);
 
@@ -245,45 +253,45 @@ public class TestSchemaTuple {
         tf = SchemaTupleFactory.getInstance(udfSchema, isAppendable, context);
         putThroughPaces(tf, udfSchema, isAppendable);
 
-        udfSchema = Utils.getSchemaFromString("int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))"
-                +"int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double,"
-                +"(int, long, chararray, boolean, bytearray, float, double))");
+        udfSchema = Utils.getSchemaFromString("int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))"
+                +"int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime,"
+                +"(int, long, chararray, boolean, bytearray, float, double, datetime))");
         tf = SchemaTupleFactory.getInstance(udfSchema, isAppendable, context);
         putThroughPaces(tf, udfSchema, isAppendable);
 
@@ -298,6 +306,16 @@ public class TestSchemaTuple {
 
         isAppendable = false;
         udfSchema = Utils.getSchemaFromString("int, m:map[(int,int,int)]");
+        tf = SchemaTupleFactory.getInstance(udfSchema, isAppendable, context);
+        putThroughPaces(tf, udfSchema, isAppendable);
+
+        isAppendable = false;
+        udfSchema = new Schema();
+        tf = SchemaTupleFactory.getInstance(udfSchema, isAppendable, context);
+        assertNull(tf);
+
+        isAppendable = false;
+        udfSchema = new Schema(new FieldSchema(null, DataType.BAG));
         tf = SchemaTupleFactory.getInstance(udfSchema, isAppendable, context);
         putThroughPaces(tf, udfSchema, isAppendable);
     }
@@ -399,6 +417,7 @@ public class TestSchemaTuple {
         case DataType.LONG: return r.nextLong();
         case DataType.FLOAT: return r.nextFloat();
         case DataType.DOUBLE: return r.nextDouble();
+        case DataType.DATETIME: return new DateTime(r.nextLong());
         case DataType.BAG:
             DataBag db = BagFactory.getInstance().newDefaultBag();
             int sz = r.nextInt(100);
@@ -450,6 +469,7 @@ public class TestSchemaTuple {
                 case DataType.LONG: st.getLong(i); break;
                 case DataType.FLOAT: st.getFloat(i); break;
                 case DataType.DOUBLE: st.getDouble(i); break;
+                case DataType.DATETIME: st.getDateTime(i); break;
                 case DataType.TUPLE: st.getTuple(i); break;
                 case DataType.BAG: st.getDataBag(i); break;
                 case DataType.MAP: st.getMap(i); break;

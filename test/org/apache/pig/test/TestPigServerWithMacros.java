@@ -17,6 +17,22 @@
  */
 package org.apache.pig.test;
 
+import static org.apache.pig.builtin.mock.Storage.resetData;
+import static org.apache.pig.builtin.mock.Storage.tuple;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -25,24 +41,19 @@ import org.apache.pig.PigServer;
 import org.apache.pig.builtin.mock.Storage;
 import org.apache.pig.data.Tuple;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.util.Iterator;
-
-import static org.apache.pig.builtin.mock.Storage.resetData;
-import static org.apache.pig.builtin.mock.Storage.tuple;
-
 public class TestPigServerWithMacros {
-    private PigServer pig = null;
+    // We pull in this MiniCluster just to get the properties. The test was not functioning properly
+    // otherwise.
+    private static MiniCluster cluster = MiniCluster.buildCluster();
 
+    private PigServer pig = null;
+    
     @Before
     public void setUp() throws Exception{
-        pig = new PigServer(ExecType.LOCAL);
+        pig = new PigServer(ExecType.LOCAL, cluster.getProperties());
     }
 
     @After
@@ -67,7 +78,6 @@ public class TestPigServerWithMacros {
         // depend on configuration
         String absPath = fs.getFileStatus(new Path(macroName)).getPath().toString();
 
-        pig = new PigServer(ExecType.LOCAL);
         Storage.Data data = resetData(pig);
         data.set("some_path", "(l:chararray)", tuple("first row"), tuple("second row"));
 
@@ -76,7 +86,7 @@ public class TestPigServerWithMacros {
         pig.registerQuery("b = row_count(a);");
         Iterator<Tuple> iter = pig.openIterator("b");
 
-        Assert.assertEquals(2L, iter.next().get(0));
+        assertEquals(2L, ((Long)iter.next().get(0)).longValue());
     }
 
     @Test
@@ -89,7 +99,7 @@ public class TestPigServerWithMacros {
         pig.registerQuery("b = row_count(a);");
         Iterator<Tuple> iter = pig.openIterator("b");
 
-        Assert.assertEquals(2L, iter.next().get(0));
+        assertEquals(2L, ((Long)iter.next().get(0)).longValue());
     }
 
     @Test
@@ -116,8 +126,52 @@ public class TestPigServerWithMacros {
         pig.registerQuery("b = foreach a generate pig.helloworld($0);");
         Iterator<Tuple> iter = pig.openIterator("b");
 
-        Assert.assertTrue(iter.next().get(0).equals("Hello, World"));
-        Assert.assertTrue(iter.next().get(0).equals("Hello, World"));
-        Assert.assertFalse(iter.hasNext());
+        assertTrue(iter.hasNext());
+        Tuple t = iter.next();
+        assertTrue(t.size() > 0);
+        assertEquals("Hello, World", t.get(0));
+
+        assertTrue(iter.hasNext());
+        t = iter.next();
+        assertTrue(t.size() > 0);
+        assertEquals("Hello, World", t.get(0));
+
+        assertFalse(iter.hasNext());
+    }
+    
+    @Test
+    public void testRegisterResourceMacro() throws Throwable {
+        String macrosFile = "test/pig/macros.pig";
+        File macrosJarFile = File.createTempFile("macros", ".jar");
+        
+        System.out.println("Creating macros jar " + macrosJarFile);
+        
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        
+        JarOutputStream jarStream = new JarOutputStream(new FileOutputStream(macrosJarFile), manifest);
+        
+        JarEntry jarEntry = new JarEntry(macrosFile);
+        jarEntry.setTime(System.currentTimeMillis());
+        jarStream.putNextEntry(jarEntry);        
+        
+        PrintWriter pw = new PrintWriter(jarStream);
+        pw.println("DEFINE row_count_in_jar(X) RETURNS Z { Y = group $X all; $Z = foreach Y generate COUNT($X); };");
+        pw.close();        
+        
+        jarStream.close();
+        
+        Storage.Data data = resetData(pig);
+        data.set("some_path", "(l:int)", tuple(tuple("1")), tuple(tuple("2")), tuple(tuple("3")), tuple(tuple("10")), tuple(tuple("11")));
+                
+        System.out.println("Registering macros jar " + macrosJarFile);
+        pig.registerJar(macrosJarFile.toString());
+        
+        pig.registerQuery("import '" + macrosFile + "';");
+        pig.registerQuery("a = load 'some_path' USING mock.Storage();");
+        pig.registerQuery("b = row_count_in_jar(a);");
+        Iterator<Tuple> iter = pig.openIterator("b");
+        
+        assertTrue(((Long)iter.next().get(0))==5);
     }
 }

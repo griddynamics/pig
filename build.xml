@@ -298,6 +298,8 @@
     </path> 
 
     <path id="test.classpath">
+        <!-- need to put this first, otherwise junit-3 testcases can break -->
+        <pathelement location="${ivy.lib.dir}/junit-3.8.1.jar"/>
         <pathelement location="${build.classes}"/>
         <pathelement location="${test.src.dir}"/>
         <pathelement location="contrib/piggybank/java/piggybank.jar"/>
@@ -484,7 +486,11 @@
     	
     	<copy file="${basedir}/test/hbase-site.xml" tofile="${test.build.classes}/hbase-site.xml"/>
    
-        <ivy:cachepath pathid="mr-apps-test.classpath" conf="test" />
+        <ivy:cachepath pathid="mr-apps-test-ivy.classpath" conf="test" />
+        <path id="mr-apps-test.classpath">
+            <pathelement path="${clover.jar}"/>
+            <path refid="mr-apps-test-ivy.classpath"/>
+        </path>
         <property name="mr-apps-classpath" refid="mr-apps-test.classpath" />
         <echo file="${test.build.classes}/mrapp-generated-classpath" message="${mr-apps-classpath}" />
     </target>
@@ -771,6 +777,7 @@
                 <include name="jline-${jline.version}.jar" />
                 <include name="jackson-mapper-asl-${jackson.version}.jar" />
                 <include name="jackson-core-asl-${jackson.version}.jar" />
+                <include name="joda-time-${joda-time.version}.jar" />
                 <include name="guava-${guava.version}.jar" />
                 <include name="automaton-${automaton.version}.jar" />
                 <include name="jansi-${jansi.version}.jar" />
@@ -780,6 +787,20 @@
             <exclude name="hadoop-site.xml" />
         </jar>
         <copy file="${output.jarfile.withouthadoop}" tofile="${output.jarfile.backcompat.withouthadoop}"/>
+    </target>
+
+    <!-- ================================================================== -->
+    <!-- Make pigperf.jar                                                   -->
+    <!-- ================================================================== -->
+    <target name="pigperf" depends="compile-test" description="Create pigperf.jar">
+        <jar jarfile="pigperf.jar">
+            <fileset dir="${test.build.dir}/classes">
+                <include name="org/apache/pig/test/pigmix/**"/>
+                <include name="org/apache/pig/test/utils/datagen/*"/>
+                <include name="org/apache/pig/test/udf/storefunc/*"/>
+            </fileset>
+            <zipfileset src="${lib.dir}/sdsuLibJKD12.jar" />
+        </jar>
     </target>
 
     <!-- ================================================================== -->
@@ -1646,15 +1667,17 @@
      </target>
   
      <!-- this is here for curiosity, to see how well the makepom task works
-     Answer: it depends whether you want transitive dependencies excluded or not
+    makepom does not depend on the resolution as it translate the ivy file into a maven file
+    we map ivy configurations to maven scopes
      -->
-     <target name="makepom" depends="ivy-resolve">
+     <target name="makepom" depends="ivy-init">
         <ivy:makepom settingsRef="${ant.project.name}.ivy.settings"
            ivyfile="ivy.xml"
-           pomfile="${build.ivy.maven.dir}/generated.pom">
-        <ivy:mapping conf="default" scope="default"/>
-        <ivy:mapping conf="master" scope="master"/> 
-        <ivy:mapping conf="runtime" scope="runtime"/>
+           pomfile="${build.ivy.maven.dir}/generated.pom"
+           conf="compile,runtime,test">
+        <ivy:mapping conf="compile" scope="compile"/>
+        <ivy:mapping conf="test" scope="test"/>
+        <ivy:mapping conf="runtime" scope="run"/>
         </ivy:makepom>
      </target>
 

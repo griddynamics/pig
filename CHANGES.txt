@@ -21,8 +21,61 @@ Pig Change Log
 Trunk (unreleased changes)
 
 INCOMPATIBLE CHANGES
+PIG-1891 Enable StoreFunc to make intelligent decision based on job success or failure (initialcontext via gates)
 
 IMPROVEMENTS
+
+PIG-2964: Add helper method getJobList() to PigStats.JobGraph. Extend visibility of couple methods on same class (prkommireddi via billgraham)
+
+PIG-2579: Support for multiple input schemas in AvroStorage (cheolsoo via sms)
+
+PIG-2946: Documentation of "history" and "clear" commands (xalan via azaroth)
+
+PIG-2877: Make SchemaTuple work in foreach (and thus, in loads) (jcoveney)
+
+PIG-2923: Lazily register bags with SpillableMemoryManager (dvryaboy)
+
+PIG-2929: Improve documentation around AVG, CONCAT, MIN, MAX (cheolsoo via billgraham)
+
+PIG-2852: Update documentation regarding parallel local mode execution (cheolsoo via jcoveney)
+
+PIG-2879: Pig current releases lack a UDF startsWith.This UDF tests if a given string starts with the specified prefix. (initialcontext via azaroth)
+
+PIG-2712: Pig does not call OutputCommitter.abortJob() on the underlying OutputFormat (rohini via gates)
+
+PIG-2918: Avoid Spillable bag overhead where possible (dvryaboy)
+
+PIG-2900: Streaming should provide conf settings in the environment (dvryaboy)
+
+PIG-2353: RANK function like in SQL (xalan via azaroth)
+
+PIG-2915: Builtin TOP udf is sensitive to null input bags (hazen via dvryaboy)
+
+PIG-2901: Errors and lacks in document "Pig Latin Basics" (miyakawataku via billgraham)
+
+PIG-2905: Improve documentation around REPLACE (cheolsoo via billgraham)
+
+PIG-2882: Use Deque instead of Stack (mkhadikov via dvryaboy)
+
+PIG-2781: LOSort isEqual method (xalan via dvryaboy)
+
+PIG-2835: Optimizing the convertion from bytes to Integer/Long (jay23jack via dvryaboy)
+
+PIG-2886: Add Scan TimeRange to HBaseStorage (ted.m via dvryaboy)
+
+PIG-2895: jodatime jar missing in pig-withouthadoop.jar  (thejas)
+
+PIG-2888: Improve performance of POPartialAgg (dvryaboy)
+
+PIG-2708: split MiniCluster based tests out of org.apache.pig.test.TestInputOutputFileValidator (analog.sony via daijy)
+
+PIG-2890: Revert PIG-2578 (dvryaboy)
+
+PIG-2850: Pig should support loading macro files as resources stored in JAR files (matterhayes via dvryaboy)
+
+PIG-1314: Add DateTime Support to Pig (zjshen via thejas)
+
+PIG-2785: NoClassDefFoundError after upgrading to pig 0.10.0 from 0.9.0 (matterhayes via sms)
 
 PIG-2556: CSVExcelStorage load: quoted field with newline as first character sees newline as record end (tivv via dvryaboy)
 
@@ -239,6 +292,40 @@ PIG-2337: Provide UDF with input schema (xutingz via daijy)
 OPTIMIZATIONS
 
 BUG FIXES
+
+PIG-2961: BinInterSedesRawComparator broken by TUPLE_number patch (jcoveney)
+
+PIG-2932: Setting high default_parallel causes IOException in local mode (cheolsoo via gates)
+
+PIG-2737: [piggybank] TestIndexedStorage is failing, should be refactored (jcoveney)
+
+PIG-2935: Catch NoSuchMethodError when StoreFuncInterface's new cleanupOnSuccess method isn't implemented. (gates via dvryaboy)
+
+PIG-2920: e2e tests override PERL5LIB environment variable (azaroth)
+
+PIG-2917: SpillableMemoryManager memory leak for WeakReference (haitao.yao via dvryaboy)
+
+PIG-2938: All unit tests that use MR2 MiniCluster are broken in trunk (cheolsoo via dvryaboy)
+
+PIG-2936: Tuple serialization bug (jcoveney)
+
+PIG-2930: ant test doesn't compile in trunk (cheolsoo via daijy)
+
+PIG-2791: Pig does not work with ViewFileSystem (rohini via daijy)
+
+PIG-2833: org.apache.pig.pigunit.pig.PigServer does not initialize set default log level of pigContext (cheolsoo via jcoveney)
+
+PIG-2744: Handle Pig command line with XML special characters (lulynn_2008 via daijy)
+
+PIG-2637: Command-line option -e throws TokenMgrError exception (lulynn_2008 via daijy)
+
+PIG-2887: Macro cannot handle negative number (knoguchi via gates)
+
+PIG-2844: ant makepom is misconfigured (julien)
+
+PIG-2896: Pig does not fail anymore if two macros are declared with the same name (julien)
+
+PIG-2848: TestBuiltInBagToTupleOrString fails now that mock.Storage enforces not overwriting output (julien)
 
 PIG-2884: JobControlCompiler mis-logs after reducer estimation (billgraham)
 
@@ -509,6 +596,8 @@ PIG-2228: support partial aggregation in map task (thejas)
 
 BUG FIXES
 
+PIG-2821: HBaseStorage should work with secure hbase (rohini via daijy)
+
 PIG-2859: Fix few e2e test failures (rohini via daijy)
 
 PIG-2729: Macro expansion does not use pig.import.search.path - UnitTest borked (johannesch via daijy)
@@ -707,6 +796,10 @@ inclusion of test classes (cos via gates)
 Release 0.9.3 - Unreleased
 
 BUG FIXES
+
+PIG-2944: ivysettings.xml does not let you override .m2/repository (raluri via daijy)
+
+PIG-2912: Pig should clone JobConf while creating JobContextImpl and TaskAttemptContextImpl in Hadoop23 (rohini via daijy)
 
 PIG-2775: Register jar does not goes to classpath in some cases (daijy)
 

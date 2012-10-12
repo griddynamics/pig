@@ -18,6 +18,7 @@
 package org.apache.pig.data;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -25,14 +26,15 @@ import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Queue;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.pig.PigConfiguration;
 import org.apache.pig.classification.InterfaceAudience;
 import org.apache.pig.classification.InterfaceStability;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.JavaCompilerHelper;
+import org.apache.pig.impl.util.ObjectSerializer;
 
 import com.google.common.collect.Lists;
 
@@ -59,28 +61,27 @@ public class SchemaTupleClassGenerator {
          * This context is used in UDF code. Currently, this is only used for
          * the inputs to UDF's.
          */
-        UDF ("pig.schematuple.udf", true, GenerateUdf.class),
+        UDF (PigConfiguration.SCHEMA_TUPLE_SHOULD_USE_IN_UDF, true, GenerateUdf.class),
         /**
-         * This context is for LoadFuncs. It is currently not used,
-         * however the intent is that when a Schema is known, the
-         * LoadFunc can return typed Tuples.
+         * This context is for POForEach. This will use the expected output of a ForEach
+         * to return a typed Tuple.
          */
-        LOAD ("pig.schematuple.load", true, GenerateLoad.class),
+        FOREACH (PigConfiguration.SCHEMA_TUPLE_SHOULD_USE_IN_FOREACH, true, GenerateForeach.class),
         /**
          * This context controls whether or not SchemaTuples will be used in FR joins.
          * Currently, they will be used in the HashMap that FR Joins construct.
          */
-        FR_JOIN ("pig.schematuple.fr_join", true, GenerateFrJoin.class),
+        FR_JOIN (PigConfiguration.SCHEMA_TUPLE_SHOULD_USE_IN_FRJOIN, true, GenerateFrJoin.class),
         /**
          * This context controls whether or not SchemaTuples will be used in merge joins.
          */
-        MERGE_JOIN ("pig.schematuple.merge_join", true, GenerateMergeJoin.class),
+        MERGE_JOIN (PigConfiguration.SCHEMA_TUPLE_SHOULD_USE_IN_MERGEJOIN, true, GenerateMergeJoin.class),
         /**
          * All registered Schemas will also be registered in one additional context.
          * This context will allow users to "force" the load of a SchemaTupleFactory
          * if one is present in any context.
          */
-        FORCE_LOAD ("pig.schematuple.force", true, GenerateForceLoad.class);
+        FORCE_LOAD (PigConfiguration.SCHEMA_TUPLE_SHOULD_ALLOW_FORCE, true, GenerateForceLoad.class);
 
         /**
          * These annotations are used to mark a given SchemaTuple with
@@ -93,7 +94,7 @@ public class SchemaTupleClassGenerator {
 
         @Retention(RetentionPolicy.RUNTIME)
         @Target(ElementType.TYPE)
-        public @interface GenerateLoad {}
+        public @interface GenerateForeach {}
 
         @Retention(RetentionPolicy.RUNTIME)
         @Target(ElementType.TYPE)
@@ -157,6 +158,10 @@ public class SchemaTupleClassGenerator {
      * identifiers are incremented before code is actually generated.
      */
     private static int nextGlobalClassIdentifier = 0;
+
+    protected static void resetGlobalClassIdentifier() {
+        nextGlobalClassIdentifier = 0;
+    }
 
     /**
      * This class actually generates the code for a given Schema.
@@ -319,9 +324,12 @@ public class SchemaTupleClassGenerator {
         private File codeDir;
 
         public void prepare() {
-            String s = schema.toString();
-            s = s.substring(1, s.length() - 1);
-            s = Base64.encodeBase64URLSafeString(s.getBytes());
+            String s;
+            try {
+                s = ObjectSerializer.serialize(schema);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to serialize schema: " + schema, e);
+            }
             add("private static Schema schema = staticSchemaGen(\"" + s + "\");");
         }
 
@@ -729,6 +737,8 @@ public class SchemaTupleClassGenerator {
                 if (booleans++ % 8 == 0) {
                     size++; //accounts for the byte used to store boolean values
                 }
+            } else if (isDateTime()) {
+                size += 10; // 8 for long and 2 for short
             } else if (isBag()) {
                 size += 8; //the ptr
                 s += "(pos_"+fieldPos+" == null ? 0 : pos_"+fieldPos+".getMemorySize()) + ";
@@ -764,6 +774,7 @@ public class SchemaTupleClassGenerator {
             case (DataType.FLOAT): add("    return 0.0f;"); break;
             case (DataType.DOUBLE): add("    return 0.0;"); break;
             case (DataType.BOOLEAN): add("    return true;"); break;
+            case (DataType.DATETIME): add("    return new DateTime();"); break;
             case (DataType.BYTEARRAY): add("    return (byte[])null;"); break;
             case (DataType.CHARARRAY): add("    return (String)null;"); break;
             case (DataType.TUPLE): add("    return (Tuple)null;"); break;
@@ -1032,6 +1043,7 @@ public class SchemaTupleClassGenerator {
             listOfFutureMethods.add(new TypeAwareSetString(DataType.BYTEARRAY));
             listOfFutureMethods.add(new TypeAwareSetString(DataType.CHARARRAY));
             listOfFutureMethods.add(new TypeAwareSetString(DataType.BOOLEAN));
+            listOfFutureMethods.add(new TypeAwareSetString(DataType.DATETIME));
             listOfFutureMethods.add(new TypeAwareSetString(DataType.TUPLE));
             listOfFutureMethods.add(new TypeAwareSetString(DataType.BAG));
             listOfFutureMethods.add(new TypeAwareSetString(DataType.MAP));
@@ -1042,6 +1054,7 @@ public class SchemaTupleClassGenerator {
             listOfFutureMethods.add(new TypeAwareGetString(DataType.BYTEARRAY));
             listOfFutureMethods.add(new TypeAwareGetString(DataType.CHARARRAY));
             listOfFutureMethods.add(new TypeAwareGetString(DataType.BOOLEAN));
+            listOfFutureMethods.add(new TypeAwareGetString(DataType.DATETIME));
             listOfFutureMethods.add(new TypeAwareGetString(DataType.TUPLE));
             listOfFutureMethods.add(new TypeAwareGetString(DataType.BAG));
             listOfFutureMethods.add(new TypeAwareGetString(DataType.MAP));
@@ -1068,6 +1081,8 @@ public class SchemaTupleClassGenerator {
                     .append("import java.io.IOException;\n")
                     .append("\n")
                     .append("import com.google.common.collect.Lists;\n")
+                    .append("\n")
+                    .append("import org.joda.time.DateTime;")
                     .append("\n")
                     .append("import org.apache.pig.data.DataType;\n")
                     .append("import org.apache.pig.data.DataBag;\n")
@@ -1187,6 +1202,10 @@ public class SchemaTupleClassGenerator {
             return type == DataType.DOUBLE;
         }
 
+        public boolean isDateTime() {
+            return type == DataType.DATETIME;
+        }
+
         public boolean isPrimitive() {
             return isInt() || isLong() || isFloat() || isDouble() || isBoolean();
         }
@@ -1232,6 +1251,7 @@ public class SchemaTupleClassGenerator {
                 case (DataType.BYTEARRAY): return "byte[]";
                 case (DataType.CHARARRAY): return "String";
                 case (DataType.BOOLEAN): return "boolean";
+                case (DataType.DATETIME): return "DateTime";
                 case (DataType.TUPLE): return "Tuple";
                 case (DataType.BAG): return "DataBag";
                 case (DataType.MAP): return "Map";

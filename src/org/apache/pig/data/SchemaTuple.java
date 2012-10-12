@@ -24,6 +24,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.classification.InterfaceAudience;
@@ -31,9 +34,8 @@ import org.apache.pig.classification.InterfaceStability;
 import org.apache.pig.data.utils.MethodHelper;
 import org.apache.pig.data.utils.MethodHelper.NotImplemented;
 import org.apache.pig.data.utils.SedesHelper;
-import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.impl.util.Utils;
+import org.apache.pig.impl.util.ObjectSerializer;
 import org.mortbay.log.Log;
 
 import com.google.common.collect.Lists;
@@ -51,6 +53,7 @@ import com.google.common.collect.Lists;
 public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTuple implements TypeAwareTuple {
 
     private static final long serialVersionUID = 1L;
+    private static final int ONE_MINUTE = 60000;
     private static final BinInterSedes bis = new BinInterSedes();
 
     @NotImplemented
@@ -173,6 +176,11 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
         out.writeDouble(v);
     }
 
+    protected static void write(DataOutput out, DateTime v) throws IOException {
+        out.writeLong(v.getMillis());
+        out.writeShort(v.getZone().getOffset(v) / ONE_MINUTE);
+    }
+
     protected static void write(DataOutput out, byte[] v) throws IOException {
         SedesHelper.writeBytes(out, v);
     }
@@ -186,12 +194,12 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
     }
 
     protected static DataBag read(DataInput in, DataBag v) throws IOException {
-        return (DataBag) bis.readDatum(in, DataType.BAG);
+        return (DataBag) bis.readDatum(in);
     }
 
     @SuppressWarnings("unchecked")
     protected static Map<String, Object> read(DataInput in, Map<String, Object> v) throws IOException {
-        return (Map<String, Object>) bis.readDatum(in, DataType.MAP);
+        return (Map<String, Object>) bis.readDatum(in);
     }
 
     protected static int read(DataInput in, int v) throws IOException {
@@ -208,6 +216,10 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
 
     protected static double read(DataInput in, double v) throws IOException {
         return in.readDouble();
+    }
+
+    protected static DateTime read(DataInput in, DateTime v) throws IOException {
+        return new DateTime(in.readLong(), DateTimeZone.forOffsetMillis(in.readShort() * ONE_MINUTE));
     }
 
     protected static String read(DataInput in, String v) throws IOException {
@@ -342,11 +354,11 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
     }
 
     protected DataBag unbox(Object v, DataBag t) {
-        return unbox((DataBag) t);
+        return unbox((DataBag) v);
     }
 
     protected Map<String, Object> unbox(Object v, Map<String, Object> t) {
-        return unbox((Map<String, Object>) t);
+        return unbox((Map<String, Object>) v);
     }
 
     protected byte[] unbox(Object v, byte[] t) {
@@ -371,6 +383,10 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
 
     protected boolean unbox(Object v, boolean t) {
         return unbox((Boolean)v);
+    }
+
+    protected DateTime unbox(Object v, DateTime t) {
+        return (DateTime)v;
     }
 
     protected String unbox(Object v, String t) {
@@ -416,6 +432,10 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
         return v.booleanValue();
     }
 
+    protected DateTime unbox(DateTime v) {
+        return v;
+    }
+
     protected DataBag box(DataBag v) {
         return v;
     }
@@ -459,6 +479,10 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
         return new Boolean(v);
     }
 
+    protected DateTime box(DateTime v) {
+        return v;
+    }
+
     protected int hashCodePiece(int hash, int v, boolean isNull) {
         return isNull ? hash : 31 * hash + v;
     }
@@ -478,6 +502,10 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
 
     protected int hashCodePiece(int hash, boolean v, boolean isNull) {
         return isNull ? hash : 31 * hash + (v ? 1231 : 1237);
+    }
+
+    protected int hashCodePiece(int hash, DateTime v, boolean isNull) {
+        return isNull ? hash : 31 * hash + v.hashCode();
     }
 
     protected int hashCodePiece(int hash, byte[] v, boolean isNull) {
@@ -579,6 +607,13 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
     protected abstract void generatedCodeSetBoolean(int fieldNum, boolean val) throws ExecException;
 
     @Override
+    public void setDateTime(int fieldNum, DateTime val) throws ExecException {
+         generatedCodeSetDateTime(fieldNum, val);
+    }
+
+    protected abstract void generatedCodeSetDateTime(int fieldNum, DateTime val) throws ExecException;
+
+    @Override
     public void setString(int fieldNum, String val) throws ExecException {
          generatedCodeSetString(fieldNum, val);
     }
@@ -641,6 +676,11 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
 
     protected boolean returnUnlessNull(boolean isNull, boolean val) throws FieldIsNullException {
         errorIfNull(isNull, "boolean");
+        return val;
+    }
+
+    protected DateTime returnUnlessNull(boolean isNull, DateTime val) throws FieldIsNullException {
+        errorIfNull(isNull, "DateTime");
         return val;
     }
 
@@ -722,6 +762,17 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
 
     public boolean unboxBoolean(Object val) {
         return ((Boolean)val).booleanValue();
+    }    
+
+    @Override
+    public DateTime getDateTime(int fieldNum) throws ExecException {
+        return generatedCodeGetDateTime(fieldNum);
+    }
+
+    protected abstract DateTime generatedCodeGetDateTime(int fieldNum) throws ExecException;
+
+    public DateTime unboxDateTime(Object val) {
+        return (DateTime)val;
     }
 
     @Override
@@ -787,10 +838,9 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
                 Log.warn("No Schema present in SchemaTuple generated class");
                 return new Schema();
             }
-            s = new String(Base64.decodeBase64(s));
-            return Utils.getSchemaFromString(s);
-        } catch (FrontendException e) {
-            throw new RuntimeException("Unable to make Schema for String: " + s);
+            return (Schema) ObjectSerializer.deserialize(s);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to deserialize serialized Schema: " + s, e);
         }
     }
 
@@ -1023,6 +1073,33 @@ public abstract class SchemaTuple<T extends SchemaTuple<T>> extends AbstractTupl
             themNull = t.isNull(pos);
         } catch (ExecException e) {
             throw new RuntimeException("Unable to retrieve byte[] field " + pos + " in given Tuple: " + t, e);
+        }
+        return compare(isNull, val, themNull, themVal);
+    }
+
+    protected int compare(boolean usNull, DateTime usVal, boolean themNull, DateTime themVal) {
+        if (usNull && themNull) {
+            return 0;
+        } else if (themNull) {
+            return 1;
+        } else if (usNull) {
+            return -1;
+        }
+        return compare(usVal, themVal);
+    }
+
+    protected int compare(DateTime val, DateTime themVal) {
+        return val.compareTo(themVal);
+    }
+
+    protected int compareWithElementAtPos(boolean isNull, DateTime val, SchemaTuple<?> t, int pos) {
+        DateTime themVal;
+        boolean themNull;
+        try {
+            themVal = t.getDateTime(pos);
+            themNull = t.isNull(pos);
+        } catch (ExecException e) {
+            throw new RuntimeException("Unable to retrieve String field " + pos + " in given Tuple: " + t, e);
         }
         return compare(isNull, val, themNull, themVal);
     }

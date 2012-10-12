@@ -222,6 +222,7 @@ op_clause : define_clause
           | limit_clause
           | sample_clause
           | order_clause
+          | rank_clause
           | cross_clause
           | join_clause
           | union_clause
@@ -317,7 +318,7 @@ field_def_list : field_def ( COMMA field_def )*
 type : simple_type | tuple_type | bag_type | map_type
 ;
 
-simple_type : BOOLEAN | INT | LONG | FLOAT | DOUBLE | CHARARRAY | BYTEARRAY
+simple_type : BOOLEAN | INT | LONG | FLOAT | DOUBLE | DATETIME | CHARARRAY | BYTEARRAY
 ;
 
 tuple_type : TUPLE? LEFT_PAREN field_def_list? RIGHT_PAREN
@@ -391,15 +392,12 @@ or_cond : and_cond  ( OR^ and_cond )*
 and_cond : unary_cond ( AND^ unary_cond )*
 ;
 
-unary_cond : expr rel_op^ expr
-           | LEFT_PAREN! cond RIGHT_PAREN!
-           | not_cond           
+unary_cond : LEFT_PAREN! cond RIGHT_PAREN!
+           | not_cond
+           | expr rel_op^ expr
            | func_eval
            | null_check_cond
-           | bool_cond           
 ;
-
-bool_cond: expr -> ^(BOOL_COND expr);
 
 not_cond : NOT^ unary_cond
 ;
@@ -502,6 +500,24 @@ limit_clause : LIMIT^ rel ( (INTEGER SEMI_COLON) => INTEGER | (LONGINTEGER SEMI_
 ;
 
 sample_clause : SAMPLE^ rel ( (DOUBLENUMBER SEMI_COLON) => DOUBLENUMBER | expr )
+;
+
+rank_clause : RANK^ rel ( rank_by_statement )?
+;
+
+rank_by_statement : BY^ rank_by_clause ( DENSE )?
+;
+
+rank_by_clause : STAR ( ASC | DESC )?
+			   | rank_list
+;
+
+rank_list : rank_col ( COMMA rank_col )*
+         -> rank_col+
+;
+
+rank_col : col_range ( ASC | DESC )?
+         | col_ref ( ASC | DESC )?
 ;
 
 order_clause : ORDER^ rel BY! order_by_clause ( USING! func_clause )?
@@ -767,6 +783,7 @@ eid : rel_str_op
     | LONG
     | FLOAT
     | DOUBLE
+    | DATETIME
     | CHARARRAY
     | BYTEARRAY
     | BAG
@@ -794,7 +811,6 @@ eid : rel_str_op
     | TRUE
     | FALSE
     | REALIAS
-    | BOOL_COND
 ;
 
 // relational operator

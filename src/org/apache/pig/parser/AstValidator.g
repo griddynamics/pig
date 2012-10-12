@@ -138,6 +138,7 @@ op_clause : define_clause
           | limit_clause
           | sample_clause
           | order_clause
+          | rank_clause
           | cross_clause
           | join_clause
           | union_clause
@@ -230,6 +231,7 @@ simple_type returns [byte typev]
   | LONG { $typev = DataType.LONG; }
   | FLOAT { $typev = DataType.FLOAT; }
   | DOUBLE { $typev = DataType.DOUBLE; }
+  | DATETIME { $typev = DataType.DATETIME; }
   | CHARARRAY { $typev = DataType.CHARARRAY; }
   | BYTEARRAY { $typev = DataType.BYTEARRAY; }
 ;
@@ -395,6 +397,20 @@ limit_clause : ^( LIMIT rel ( INTEGER | LONGINTEGER | expr ) )
 ;
 
 sample_clause : ^( SAMPLE rel ( DOUBLENUMBER | expr ) )
+;
+
+rank_clause : ^( RANK rel ( rank_by_statement )? )
+;
+
+rank_by_statement : ^( BY rank_by_clause ( DENSE )? )
+;
+
+rank_by_clause : STAR ( ASC | DESC )?
+               | rank_col+
+;
+
+rank_col : col_range (ASC | DESC)?
+         | col_ref ( ASC | DESC )?
 ;
 
 order_clause : ^( ORDER rel order_by_clause func_clause? )
@@ -598,6 +614,7 @@ eid : rel_str_op
     | ROLLUP
     | MATCHES
     | ORDER
+    | RANK
     | DISTINCT
     | COGROUP
     | JOIN
@@ -628,6 +645,7 @@ eid : rel_str_op
     | LONG
     | FLOAT
     | DOUBLE
+    | DATETIME
     | CHARARRAY
     | BYTEARRAY
     | BAG
