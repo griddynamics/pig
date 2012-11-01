@@ -24,6 +24,10 @@ INCOMPATIBLE CHANGES
 
 IMPROVEMENTS
 
+PIG-2997: Provide a convenience constructor on PigServer that accepts Configuration (prkommireddi via rohini)
+
+PIG-2933: HBaseStorage is using setScannerCaching which is deprecated (prkommireddi via rohini)
+
 PIG-2881: Add SUBTRACT eval function (jocosti via cheolsoo)
 
 PIG-3004: Improve exceptions messages when a RuntimeException is raised in Physical Operators (julien)
@@ -57,6 +61,10 @@ PIG-2931: $ signs in the replacement string make parameter substitution fail (ch
 PIG-1891 Enable StoreFunc to make intelligent decision based on job success or failure (initialcontext via gates)
 
 IMPROVEMENTS
+
+PIG-2832: org.apache.pig.pigunit.pig.PigServer does not initialize udf.import.list of PigContext (prkommireddi via rohini)
+
+PIG-2898: Parallel execution of e2e tests (iveselovsky via rohini)
 
 PIG-2913: org.apache.pig.test.TestPigServerWithMacros fails sometimes because it picks up previous minicluster configuration file (cheolsoo via julien)
 
