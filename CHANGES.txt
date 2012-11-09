@@ -24,6 +24,8 @@ INCOMPATIBLE CHANGES
 
 IMPROVEMENTS
 
+PIG-3016: Modernize more tests (jcoveney via cheolsoo)
+
 PIG-2582: Store size in bytes (not mbytes) in ResourceStatistics (prkommireddi via billgraham)
 
 PIG-3006: Modernize a chunk of the tests (jcoveney via cheolsoo)
@@ -353,6 +355,8 @@ PIG-2337: Provide UDF with input schema (xutingz via daijy)
 OPTIMIZATIONS
 
 BUG FIXES
+
+PIG-2979: Pig.jar doesn't work with hadoop-2.0.x (cheolsoo)
 
 PIG-3035: With latest version of hadoop23 pig does not return the correct exception stack trace from backend (rohini)
 
