@@ -22,6 +22,8 @@ Trunk (unreleased changes)
 
 INCOMPATIBLE CHANGES
 
+PIG-3034: Remove Penny code from Pig repository (gates via cheolsoo)
+
 IMPROVEMENTS
 
 PIG-3016: Modernize more tests (jcoveney via cheolsoo)
@@ -65,8 +67,6 @@ PIG-2928: Fix e2e test failures in trunk: FilterBoolean_23/24 (cheolsoo via dvry
 Release 0.11.0 (unreleased)
 
 INCOMPATIBLE CHANGES
-
-PIG-3034: Remove Penny code from Pig repository (gates via cheolsoo)
 
 PIG-2931: $ signs in the replacement string make parameter substitution fail (cheolsoo via jcoveney)
 
@@ -359,6 +359,8 @@ PIG-2337: Provide UDF with input schema (xutingz via daijy)
 OPTIMIZATIONS
 
 BUG FIXES
+
+PIG-3045: Specifying sorting field(s) at nightly.conf - fix sortArgs (rohini via cheolsoo)
 
 PIG-2979: Pig.jar doesn't work with hadoop-2.0.x (cheolsoo)
 
