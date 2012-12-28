@@ -404,6 +404,8 @@ OPTIMIZATIONS
 
 BUG FIXES
 
+PIG-3051: java.lang.IndexOutOfBoundsException failure with LimitOptimizer + ColumnPruning (knoguchi via rohini)
+
 PIG-3076: make TestScalarAliases more reliable (julien)
 
 PIG-3020: "Duplicate uid in schema" error when joining two relations derived from the same load statement (jcoveney)
@@ -612,6 +614,8 @@ PIG-2352: e2e test harness' use of environment variables causes unintended effec
 Release 0.10.1 - Unreleased
 
 BUG FIXES
+
+PIG-3107: bin and autocomplete are missing in src release (daijy)
 
 PIG-3106: Missing license header in several java file (daijy)
 
