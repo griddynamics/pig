@@ -129,6 +129,8 @@ PIG-3013: BinInterSedes improve chararray sort performance (rohini)
 
 BUG FIXES
 
+PIG-3081: Pig progress stays at 0% for the first job in hadoop 23 (rohini)
+
 PIG-3150: e2e Scripting_5 fails in trunk (dreambird via cheolsoo)
 
 PIG-3153: TestScriptUDF.testJavascriptExampleScript fails in trunk (cheolsoo)
@@ -212,6 +214,8 @@ Release 0.11.1 (unreleased)
 INCOMPATIBLE CHANGES
 
 IMPROVEMENTS
+
+PIG-2988: start deploying pigunit maven artifact part of Pig release process (njw45 via rohini)
 
 PIG-3148: OutOfMemory exception while spilling stale DefaultDataBag. Extra option to gc() before spilling large bag. (knoguchi via rohini)
 
