@@ -1833,11 +1833,14 @@ class GroovyUDFs {",
 <ul>
   <li>Tuple: groovy.lang.Tuple</li>
   <li>DataBag: groovy.lang.Tuple containing the bag's size and an iterator on its content</li>
+  <li>org.joda.time.DateTime: org.joda.time.DateTime</li>
   <li>Map: java.util.Map</li>
   <li>int/long/float/double: as is</li>
   <li>chararray: String</li>
   <li>bytearray: byte[] (content is copied)</li>
   <li>boolean: boolean</li>
+  <li>biginteger: BigInteger</li>
+  <li>bigdecimal: BigDecimal</li>
   <li>null: null </li>
 </ul>
 <p>Anything else raises an exception</p>
@@ -1848,15 +1851,18 @@ class GroovyUDFs {",
   <li>groovy.lang.Tuple: Tuple</li>
   <li>org.apache.pig.data.Tuple: Tuple</li>
   <li>org.apache.pig.data.DataBag: DataBag</li>
+  <li>org.joda.time.DateTime: org.joda.time.DateTime</li>
   <li>java.util.Map: Map</li>
   <li>java.util.List: DataBag</li>
   <li>Byte/Short/Integer: int</li>
-  <li>Long/BigInteger: long</li>
+  <li>Long: long</li>
   <li>Float: float</li>
-  <li>Double/BigDecimal: double</li>
+  <li>Double: double</li>
   <li>String: chararray</li>
   <li>byte[]: DataByteArray (content is copied)</li>
   <li>Boolean: boolean</li>
+  <li>BigInteger: biginteger</li>
+  <li>BigDecimal: bigdecimal</li>
   <li>null: null</li>
 </ul>
 <p>Anything else raises an exception</p>
