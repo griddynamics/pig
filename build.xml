@@ -1417,6 +1417,29 @@
         </clover-report>
      </target>
 
+     <target name="aggregate-and-generate-clover-reports" depends="clover.check, clover">
+       <clover-merge initString="pig-clover.db">
+         <cloverDbSet dir="${clover.db.dir}">
+           <include name="**/clover.db"/>
+           <include name="**/pig_coverage.db"/>
+           <include name="**/pig_coverage-baseline.db"/>
+           <include name="**/pig_coverage-original.db"/>
+         </cloverDbSet>
+       </clover-merge>
+
+        <mkdir dir="${clover.report.dir}"/>
+        <clover-report initString="pig-clover.db">
+            <current outfile="${clover.report.dir}" title="${final.name}">
+                <format type="html"/>
+            </current>
+        </clover-report>
+        <clover-report initString="pig-clover.db">
+            <current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
+                <format type="xml"/>
+            </current>
+        </clover-report>
+     </target>
+
      <target name="generate-pdf-clover-reports" depends="clover.check, clover">
         <mkdir dir="${clover.pdf.report.dir}"/>
         <clover-pdf-report outfile="${clover.pdf.report.dir}/clover_coverage.pdf" />
