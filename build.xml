@@ -1381,6 +1381,7 @@
 
      <target name="clover.setup" if="clover.enabled">
         <taskdef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        <typedef resource="cloverlib.xml" classpath="${clover.jar}"/>
         <mkdir dir="${clover.db.dir}"/>
         <clover-setup initString="${clover.db.dir}/pig_coverage.db">
            <fileset dir="src" includes="**/*.java"/>
@@ -1403,42 +1404,70 @@
         </fail>
      </target>
 
-     <target name="generate-clover-reports" depends="clover.check, clover">
+    <fileset dir="${basedir}" id="clover.report.fileset">
+        <include name="**/*.java"/>
+    </fileset>
+
+    <target name="generate-clover-reports" depends="clover.check, clover">
+        <clover-columns id="clover.columns">
+            <totalChildren/>
+            <filteredElements/>
+            <avgMethodComplexity/>
+            <uncoveredElements format="raw"/>
+            <totalPercentageCovered format="longbar"/>
+        </clover-columns>
+
         <mkdir dir="${clover.report.dir}"/>
         <clover-report>
             <current outfile="${clover.report.dir}" title="${final.name}">
+                <fileset refid="clover.report.fileset"/>
                 <format type="html"/>
+                <columns refid="clover.columns"/>
             </current>
         </clover-report>
         <clover-report>
             <current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
+                <fileset refid="clover.report.fileset"/>
                 <format type="xml"/>
+                <columns refid="clover.columns"/>
             </current>
         </clover-report>
-     </target>
+    </target>
 
-     <target name="aggregate-and-generate-clover-reports" depends="clover.check, clover">
-       <clover-merge initString="pig-clover.db">
-         <cloverDbSet dir="${clover.db.dir}">
-           <include name="**/clover.db"/>
-           <include name="**/pig_coverage.db"/>
-           <include name="**/pig_coverage-baseline.db"/>
-           <include name="**/pig_coverage-original.db"/>
-         </cloverDbSet>
-       </clover-merge>
+    <target name="aggregate-and-generate-clover-reports" depends="clover.check, clover">
+        <clover-columns id="clover.columns">
+            <totalChildren/>
+            <filteredElements/>
+            <avgMethodComplexity/>
+            <uncoveredElements format="raw"/>
+            <totalPercentageCovered format="longbar"/>
+        </clover-columns>
+
+        <clover-merge initString="pig-clover.db">
+            <cloverDbSet dir="${clover.db.dir}">
+                <include name="**/clover.db"/>
+                <include name="**/pig_coverage.db"/>
+                <include name="**/pig_coverage-baseline.db"/>
+                <include name="**/pig_coverage-original.db"/>
+            </cloverDbSet>
+        </clover-merge>
 
         <mkdir dir="${clover.report.dir}"/>
         <clover-report initString="pig-clover.db">
             <current outfile="${clover.report.dir}" title="${final.name}">
+                <fileset refid="clover.report.fileset"/>
                 <format type="html"/>
+                <columns refid="clover.columns"/>
             </current>
         </clover-report>
         <clover-report initString="pig-clover.db">
             <current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
+                <fileset refid="clover.report.fileset"/>
                 <format type="xml"/>
+                <columns refid="clover.columns"/>
             </current>
         </clover-report>
-     </target>
+    </target>
 
      <target name="generate-pdf-clover-reports" depends="clover.check, clover">
         <mkdir dir="${clover.pdf.report.dir}"/>
