@@ -44,7 +44,7 @@ import com.google.common.cache.LoadingCache;
 public class StreamingCommandUtils {
     private static final String PERL = "perl";
     private static final String PYTHON = "python";
-    private static final char SINGLE_QUOTE = '\u005c';
+    private static final char SINGLE_QUOTE = '\u005c'';
     private static final char DOUBLE_QUOTE = '"';
     /**
      * "which" gets called by each {@link LogicalPlanBuilder} (there's one per pig
