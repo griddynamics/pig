@@ -857,7 +857,14 @@
 
         </junit>
         <delete dir="${junit.tmp.dir}/"/>
-        <fail if="tests.failed">Tests failed!</fail>
+        <fail message="Tests failed!">
+            <condition>
+                <and>
+                    <isfalse value="${test.ignore.failures}"/>
+                    <istrue value="${tests.failed}"/>
+                </and>
+            </condition>
+        </fail>
       </sequential>
     </macrodef>
 
