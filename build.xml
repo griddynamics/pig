@@ -1413,6 +1413,7 @@
 
     <fileset dir="${basedir}" id="clover.report.fileset">
         <include name="**/*.java"/>
+        <exclude name="**/org/apache/pig/parser/StreamingCommandUtils.java"/>
     </fileset>
 
     <target name="generate-clover-reports" depends="clover.check, clover">
