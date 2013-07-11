@@ -1400,7 +1400,7 @@
         <typedef resource="cloverlib.xml" classpath="${clover.jar}"/>
         <mkdir dir="${clover.db.dir}"/>
         <clover-setup initString="${clover.db.dir}/pig_coverage.db">
-           <fileset dir="src" includes="**/*.java"/>
+           <fileset dir="." includes="**/*.java"/>
         </clover-setup>
      </target>
 
@@ -1422,7 +1422,7 @@
 
     <fileset dir="${basedir}" id="clover.report.fileset">
         <include name="**/*.java"/>
-        <exclude name="**/org/apache/pig/parser/StreamingCommandUtils.java"/>
+        <!-- <exclude name="**/org/apache/pig/parser/StreamingCommandUtils.java"/> -->
     </fileset>
 
     <target name="generate-clover-reports" depends="clover.check, clover">
