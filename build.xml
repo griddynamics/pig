@@ -933,7 +933,14 @@
 
         </junit>
         <delete dir="${junit.tmp.dir}/"/>
-        <fail if="tests.failed">Tests failed!</fail>
+        <fail message="Tests failed!">
+            <condition>
+                <and>
+                    <isfalse value="${test.ignore.failures}"/>
+                    <istrue value="${tests.failed}"/>
+                </and>
+            </condition>
+        </fail>
       </sequential>
     </macrodef>
     
@@ -1591,10 +1598,12 @@
 		To use, specify -Dclover.home=&lt;base of clover installation&gt; -Drun.clover=true on the command line."/>
 
      <target name="clover.setup" if="clover.enabled">
-     	<taskdef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        <taskdef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        <typedef resource="cloverlib.xml" classpath="${clover.jar}"/>
+
         <mkdir dir="${clover.db.dir}"/>
         <clover-setup initString="${clover.db.dir}/pig_coverage.db">
-        	<fileset dir="src" includes="**/*.java"/>
+           <fileset dir="." includes="**/*.java"/>
         </clover-setup>
      </target>
 
@@ -1614,27 +1623,75 @@
   	 </fail>
      </target>
 
-     <target name="generate-clover-reports" depends="clover.check, clover">
-     	<mkdir dir="${clover.report.dir}"/>
-  	<clover-report>
-     		<current outfile="${clover.report.dir}" title="${final.name}">
-     	    		<format type="html"/>
-     	  	</current>
-  	</clover-report>
+    <fileset dir="${basedir}" id="clover.report.fileset">
+        <include name="**/*.java"/>
+    </fileset>
+
+    <target name="generate-clover-reports" depends="clover.check, clover">
+        <clover-columns id="clover.columns">
+            <totalChildren/>
+            <filteredElements/>
+            <avgMethodComplexity/>
+            <uncoveredElements format="raw"/>
+            <totalElements format="raw"/>
+            <totalPercentageCovered format="longbar"/>
+        </clover-columns>
+
+        <mkdir dir="${clover.report.dir}"/>
         <clover-report>
-          	<current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
-            		<format type="xml"/>
-          	</current>
+            <current outfile="${clover.report.dir}" title="${final.name}">
+                <fileset refid="clover.report.fileset"/>
+                <format type="html"/>
+                <columns refid="clover.columns"/>
+            </current>
+            <current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
+                <fileset refid="clover.report.fileset"/>
+                <format type="xml"/>
+                <columns refid="clover.columns"/>
+            </current>
         </clover-report>
-     </target>
+    </target>
 
-     <target name="generate-pdf-clover-reports" depends="clover.check, clover">
+    <target name="generate-pdf-clover-reports" depends="clover.check, clover">
        <mkdir dir="${clover.pdf.report.dir}"/>
-        <clover-pdf-report outfile="${clover.pdf.report.dir}/clover_coverage.pdf" />
-     </target>
+       <clover-pdf-report outfile="${clover.pdf.report.dir}/clover_coverage.pdf" />
+    </target>
 
+    <target name="aggregate-and-generate-clover-reports" depends="clover.check, clover">
+        <clover-columns id="clover.columns">
+            <totalChildren/>
+            <filteredElements/>
+            <avgMethodComplexity/>
+            <uncoveredElements format="raw"/>
+            <totalElements format="raw"/>
+            <totalPercentageCovered format="longbar"/>
+        </clover-columns>
 
-     <target name="api-xml" depends="ivy-jdiff, javadoc-all, write-null">
+        <clover-merge initString="pig-clover.db">
+            <cloverDbSet dir="${clover.db.dir}">
+                <include name="**/clover.db"/>
+                <include name="**/pig_coverage.db"/>
+                <include name="**/pig_coverage-baseline.db"/>
+                <include name="**/pig_coverage-original.db"/>
+            </cloverDbSet>
+        </clover-merge>
+
+        <mkdir dir="${clover.report.dir}"/>
+        <clover-report initString="pig-clover.db">
+            <current outfile="${clover.report.dir}" title="${final.name}">
+                <fileset refid="clover.report.fileset"/>
+                <format type="html"/>
+                <columns refid="clover.columns"/>
+            </current>
+            <current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
+                <fileset refid="clover.report.fileset"/>
+                <format type="xml"/>
+                <columns refid="clover.columns"/>
+            </current>
+        </clover-report>
+    </target>
+
+    <target name="api-xml" depends="ivy-jdiff, javadoc-all, write-null">
         <javadoc>
                 <doclet name="jdiff.JDiff"
                         path="${jdiff.jar}:${xerces.jar}">
