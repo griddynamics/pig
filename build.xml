@@ -1431,6 +1431,7 @@
             <filteredElements/>
             <avgMethodComplexity/>
             <uncoveredElements format="raw"/>
+            <totalElements format="raw"/>
             <totalPercentageCovered format="longbar"/>
         </clover-columns>
 
