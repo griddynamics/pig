@@ -1442,8 +1442,6 @@
                 <format type="html"/>
                 <columns refid="clover.columns"/>
             </current>
-        </clover-report>
-        <clover-report>
             <current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
                 <fileset refid="clover.report.fileset"/>
                 <format type="xml"/>
@@ -1458,6 +1456,7 @@
             <filteredElements/>
             <avgMethodComplexity/>
             <uncoveredElements format="raw"/>
+            <totalElements format="raw"/>
             <totalPercentageCovered format="longbar"/>
         </clover-columns>
 
@@ -1477,8 +1476,6 @@
                 <format type="html"/>
                 <columns refid="clover.columns"/>
             </current>
-        </clover-report>
-        <clover-report initString="pig-clover.db">
             <current outfile="${clover.report.dir}/clover.xml" title="${final.name}">
                 <fileset refid="clover.report.fileset"/>
                 <format type="xml"/>
