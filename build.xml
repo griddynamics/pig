@@ -1490,6 +1490,7 @@
             <totalPercentageCovered format="longbar"/>
         </clover-columns>
 
+        <delete file="pig-clover.db"/>
         <clover-merge initString="pig-clover.db">
             <cloverDbSet dir="${clover.db.dir}">
                 <include name="pig_coverage.db"/>
