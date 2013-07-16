@@ -111,7 +111,6 @@
     <!-- test configuration, use ${user.home}/build.properties to configure values  -->
     <property name="ssh.gateway" value="" />
     <property name="hod.server" value="" />
-    <property name="test.log.dir" value="${basedir}/test/logs"/>
     <property name="test.output" value="no"/>
 
     <!-- e2e test properties -->
@@ -812,10 +811,12 @@
   
   
     <target name="test-lightweight" depends="ivy-init,debugger.check" 
-       description="Run tests specified in '${test.file}' file without any re-compilation. The project must be built prio to this target call.">
+       description="Run tests specified in '${test.batch.file}' file without any re-compilation. The project must be built prio to this target call.">
         <!-- Fast-fail check for the file property: -->
-        <fail unless="test.file" 
-          message="Please specify the property 'test.file'. It should point to the test list file."/>
+        <fail unless="test.batch.file" 
+          message="Please specify the property 'test.batch.file'. It should point to the test list file."/>
+        <available property="test.batch.file.present" file="${test.batch.file}" />  
+        <fail unless="test.batch.file.present" message="Test batch file [${test.batch.file}] not found."/>
       
         <!-- Define necessary classpaths: -->
         <ivy:cachepath pathid="mr-apps-test-ivy.classpath" conf="test" />
@@ -830,7 +831,7 @@
         <ivy:cachepath pathid="compile.classpath" conf="compile"/>
 
         <!-- Run the specified tests: -->
-        <macro-test-runner test.file="${test.file}" />
+        <macro-test-runner test.file="${test.batch.file}" />
     </target>   
 
     <target name="debugger.check" depends="debugger.set,debugger.unset"/>
@@ -845,7 +846,7 @@
     <macrodef name="macro-test-runner">
       <attribute name="test.file" />
       <sequential>
-        <delete dir="${test.log.dir}"/>
+        <!-- <delete dir="${test.log.dir}"/> -->
         <mkdir dir="${test.log.dir}"/>
         <tempfile property="junit.tmp.dir" prefix="pig_junit_tmp" destDir="${java.io.tmpdir}" />
         <mkdir dir="${junit.tmp.dir}/"/>
@@ -1448,7 +1449,10 @@
         <include name="**/*.java"/>
     </fileset>
 
-    <target name="generate-clover-reports" depends="clover.check, clover">
+    <target name="generate-clover-reports" depends="clover.check">
+        <taskdef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        <typedef resource="cloverlib.xml" classpath="${clover.jar}"/>
+
         <clover-columns id="clover.columns">
             <totalChildren/>
             <filteredElements/>
@@ -1473,7 +1477,10 @@
         </clover-report>
     </target>
 
-    <target name="aggregate-and-generate-clover-reports" depends="clover.check, clover">
+    <target name="aggregate-and-generate-clover-reports" depends="clover.check">
+        <taskdef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        <typedef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        
         <clover-columns id="clover.columns">
             <totalChildren/>
             <filteredElements/>
@@ -1485,10 +1492,9 @@
 
         <clover-merge initString="pig-clover.db">
             <cloverDbSet dir="${clover.db.dir}">
-                <include name="**/clover.db"/>
-                <include name="**/pig_coverage.db"/>
-                <include name="**/pig_coverage-baseline.db"/>
-                <include name="**/pig_coverage-original.db"/>
+                <include name="pig_coverage.db"/>
+                <include name="pig_coverage-baseline.db"/>
+                <include name="pig_coverage-original.db"/>
             </cloverDbSet>
         </clover-merge>
 
