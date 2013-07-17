@@ -808,7 +808,12 @@
         <macro-test-runner test.file="${test.smoke.file}" />
     </target>
   
-  
+    <target 
+      name="build-for-test-lightweight"
+      depends="jar-withouthadoop,compile-test,jackson-pig-3039-test-download"
+      description="This target is to be invoked once (possibly with 'clean') before a number of 'test-lightweight' calls.
+        It comiles all the project sources and tests, plus makes the 'jar-withouthadoop.jar' that is necessary for tests.">
+    </target>
   
     <target name="test-lightweight" depends="ivy-init,debugger.check" 
        description="Run tests specified in '${test.batch.file}' file without any re-compilation. The project must be built prio to this target call.">
