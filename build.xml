@@ -111,7 +111,6 @@
     <!-- test configuration, use ${user.home}/build.properties to configure values  -->
     <property name="ssh.gateway" value="" />
     <property name="hod.server" value="" />
-    <property name="test.log.dir" value="${basedir}/test/logs"/>
     <property name="test.output" value="no"/>
 
     <!-- e2e test properties -->
@@ -808,6 +807,37 @@
     <target name="test-smoke" depends="compile-test,jar-withouthadoop,debugger.check" description="Run 30 min smoke tests">
         <macro-test-runner test.file="${test.smoke.file}" />
     </target>
+  
+    <target 
+      name="build-for-test-lightweight"
+      depends="jar-withouthadoop,compile-test,jackson-pig-3039-test-download"
+      description="This target is to be invoked once (possibly with 'clean') before a number of 'test-lightweight' calls.
+        It comiles all the project sources and tests, plus makes the 'jar-withouthadoop.jar' that is necessary for tests.">
+    </target>
+  
+    <target name="test-lightweight" depends="ivy-init,debugger.check" 
+       description="Run tests specified in '${test.batch.file}' file without any re-compilation. The project must be built prio to this target call.">
+        <!-- Fast-fail check for the file property: -->
+        <fail unless="test.batch.file" 
+          message="Please specify the property 'test.batch.file'. It should point to the test list file."/>
+        <available property="test.batch.file.present" file="${test.batch.file}" />  
+        <fail unless="test.batch.file.present" message="Test batch file [${test.batch.file}] not found."/>
+      
+        <!-- Define necessary classpaths: -->
+        <ivy:cachepath pathid="mr-apps-test-ivy.classpath" conf="test" />
+        <path id="mr-apps-test.classpath">
+           <fileset dir="${clover.home}" erroronmissingdir="false">
+              <include name="lib/clover.jar"/>
+           </fileset>
+           <path refid="mr-apps-test-ivy.classpath"/>
+        </path>
+        <property name="mr-apps-classpath" refid="mr-apps-test.classpath" />
+      
+        <ivy:cachepath pathid="compile.classpath" conf="compile"/>
+
+        <!-- Run the specified tests: -->
+        <macro-test-runner test.file="${test.batch.file}" />
+    </target>   
 
     <target name="debugger.check" depends="debugger.set,debugger.unset"/>
     <target name="debugger.set" if="debugPort">
@@ -821,7 +851,7 @@
     <macrodef name="macro-test-runner">
       <attribute name="test.file" />
       <sequential>
-        <delete dir="${test.log.dir}"/>
+        <!-- <delete dir="${test.log.dir}"/> -->
         <mkdir dir="${test.log.dir}"/>
         <tempfile property="junit.tmp.dir" prefix="pig_junit_tmp" destDir="${java.io.tmpdir}" />
         <mkdir dir="${junit.tmp.dir}/"/>
@@ -1424,7 +1454,10 @@
         <include name="**/*.java"/>
     </fileset>
 
-    <target name="generate-clover-reports" depends="clover.check, clover">
+    <target name="generate-clover-reports" depends="clover.check">
+        <taskdef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        <typedef resource="cloverlib.xml" classpath="${clover.jar}"/>
+
         <clover-columns id="clover.columns">
             <totalChildren/>
             <filteredElements/>
@@ -1449,7 +1482,10 @@
         </clover-report>
     </target>
 
-    <target name="aggregate-and-generate-clover-reports" depends="clover.check, clover">
+    <target name="aggregate-and-generate-clover-reports" depends="clover.check">
+        <taskdef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        <typedef resource="cloverlib.xml" classpath="${clover.jar}"/>
+        
         <clover-columns id="clover.columns">
             <totalChildren/>
             <filteredElements/>
@@ -1459,12 +1495,12 @@
             <totalPercentageCovered format="longbar"/>
         </clover-columns>
 
+        <delete file="pig-clover.db"/>
         <clover-merge initString="pig-clover.db">
             <cloverDbSet dir="${clover.db.dir}">
-                <include name="**/clover.db"/>
-                <include name="**/pig_coverage.db"/>
-                <include name="**/pig_coverage-baseline.db"/>
-                <include name="**/pig_coverage-original.db"/>
+                <include name="pig_coverage.db"/>
+                <include name="pig_coverage-baseline.db"/>
+                <include name="pig_coverage-original.db"/>
             </cloverDbSet>
         </clover-merge>
 
