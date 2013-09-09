@@ -30,6 +30,10 @@ PIG-3174: Remove rpm and deb artifacts from build.xml (gates)
 
 IMPROVEMENTS
 
+PIG-3431: Return more information for parsing related exceptions. (jeremykarn via daijy)
+
+PIG-3430: Add xml format for explaining MapReduce Plan. (jeremykarn via daijy)
+
 PIG-3048: Add mapreduce workflow information to job configuration (billie.rinaldi via daijy)
 
 PIG-3436: Make pigmix run with Hadoop2 (rohini)
@@ -219,6 +223,8 @@ PIG-3123: Simplify Logical Plans By Removing Unneccessary Identity Projections (
 PIG-3013: BinInterSedes improve chararray sort performance (rohini)
 
 BUG FIXES
+
+PIG-3426: Add support for removing s3 files (jeremykarn via daijy)
 
 PIG-3349: Document ToString(Datetime, String) UDF (cheolsoo)
 
