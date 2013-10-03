@@ -45,6 +45,8 @@ PIG-3174: Remove rpm and deb artifacts from build.xml (gates)
 
 IMPROVEMENTS
 
+PIG-3470: Print configuration variables in grunt (lbendig via daijy)
+
 PIG-3493: Add max/min for datetime (tyro89 via daijy)
 
 PIG-3479: Fix BigInt, BigDec, Date serialization. Improve perf of PigNullableWritable deserilization (dvryaboy)
@@ -257,6 +259,8 @@ PIG-3123: Simplify Logical Plans By Removing Unneccessary Identity Projections (
 PIG-3013: BinInterSedes improve chararray sort performance (rohini)
 
 BUG FIXES
+
+PIG-3495: Streaming udf e2e tests failures on Windows (daijy)
 
 PIG-3292: Logical plan invalid state: duplicate uid in schema during self-join to get cross product (cheolsoo via daijy)
 
